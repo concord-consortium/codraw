@@ -1,10 +1,11 @@
 /* global firebase require module */
 var queryString = require('query-string');
 
-function FirebaseImp(params) {
+function FirebaseImp() {
   this.user = null;
   this.token = null;
-  this.refName = params.firebaseKey;
+  var params = queryString.parse(location.search);
+  this.refName = params.firebaseKey || 'default';
   this.newRefName = params.newKey;
   this.config = {
     apiKey: 'AIzaSyDUm2l464Cw7IVtBef4o55key6sp5JYgDk',
@@ -41,7 +42,7 @@ FirebaseImp.prototype.reqAuth = function() {
 
 FirebaseImp.prototype.failAuth = function(error) {
   var errorMessage = error.message;
-  const email = error.email;
+  var email = error.email;
   this.error(['could not authenticate', errorMessage, email].join(' '));
 };
 
@@ -125,3 +126,4 @@ FirebaseImp.prototype.setLoadFunction = function(_loadCallback) {
 };
 
 module.exports = FirebaseImp;
+window.FirebaseStorage =FirebaseImp;
