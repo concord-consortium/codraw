@@ -1,5 +1,6 @@
 /* global firebase require module */
 var queryString = require('query-string');
+var _ = require('lodash');
 
 function FirebaseImp() {
   this.user = null;
@@ -7,6 +8,7 @@ function FirebaseImp() {
   var params = queryString.parse(location.search);
   this.refName = params.firebaseKey || 'default';
   this.newRefName = params.newKey;
+  this.lastData = {};
   this.config = {
     apiKey: 'AIzaSyDUm2l464Cw7IVtBef4o55key6sp5JYgDk',
     authDomain: 'colabdraw.firebaseapp.com',
@@ -60,7 +62,12 @@ FirebaseImp.prototype.registerListeners = function() {
   var log = this.log.bind(this);
   ref.on('value', function(data){
     var d = data.val().rawData;
-    setData(d || {});
+    // TODO: The diffs on changes are very weird.
+    // See results using https://github.com/flitbit/diff
+    if(d && !(_.isEqual(d,this.lastData))) {
+      setData(d || {});
+      this.lastData = d;
+    }
     if(this.newRefName && d) {
       this.swapRefs();
       this.update(d);
@@ -74,12 +81,16 @@ FirebaseImp.prototype.registerListeners = function() {
   ref.on('child_removed', function(data){ log('child removed: ' + data);});
 };
 
-FirebaseImp.prototype.update = function(data) {
+var update = function(data) {
   var rawData = JSON.parse(data);
   if(this.dataRef && this.dataRef.update){
     this.dataRef.update({'rawData': rawData});
   }
 };
+
+// TODO: We shouldn't have to debounce, but in some instances … ?
+FirebaseImp.prototype.update = _.debounce(update,100,{trailing:true, leading: false});
+// FirebaseImp.prototype.update = update;
 
 FirebaseImp.prototype.swapRefs = function() {
   this.log('registering listeners');
@@ -92,10 +103,6 @@ FirebaseImp.prototype.swapRefs = function() {
     }
   }
   this.dataRef = firebase.database().ref(this.newRefName);
-  // This is the copy operation:
-  if(this.lastData) {
-    this.update(this.lastData);
-  }
   this.registerListeners();
   this.rewriteParams();
 };
