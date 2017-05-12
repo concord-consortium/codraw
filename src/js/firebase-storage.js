@@ -82,15 +82,19 @@ FirebaseImp.prototype.registerListeners = function() {
 };
 
 var update = function(data) {
-  var rawData = JSON.parse(data);
+  var rawData = data;
+  if (typeof data == "string") {
+    rawData = JSON.parse(data);
+  }
   if(this.dataRef && this.dataRef.update){
+    this.lastData = rawData;
     this.dataRef.update({'rawData': rawData});
   }
 };
 
 // TODO: We shouldn't have to debounce, but in some instances … ?
-FirebaseImp.prototype.update = _.debounce(update,100,{trailing:true, leading: false});
-// FirebaseImp.prototype.update = update;
+// FirebaseImp.prototype.update = _.debounce(update,1000,{trailing:true, leading: false});
+FirebaseImp.prototype.update = update;
 
 FirebaseImp.prototype.swapRefs = function() {
   this.log('registering listeners');
