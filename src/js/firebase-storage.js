@@ -1,13 +1,14 @@
 /* global firebase require module */
 var queryString = require('query-string');
 var _ = require('lodash');
+var uuid = require('uuid');
 
 function FirebaseImp() {
   this.user = null;
   this.token = null;
   var params = queryString.parse(location.search);
   this.refName = params.firebaseKey || 'default';
-  this.newRefName = params.newKey;
+  this.newRefName = params.makeCopy ? uuid.v1() : params.newKey || null;
   this.lastData = {};
   this.config = {
     apiKey: 'AIzaSyDUm2l464Cw7IVtBef4o55key6sp5JYgDk',
@@ -29,8 +30,9 @@ FirebaseImp.prototype.error = function(error) {
 
 FirebaseImp.prototype.rewriteParams = function() {
   var params = queryString.parse(location.search);
-  params.firebaseKey = params.newKey;
+  params.firebaseKey = this.newRefName
   delete params.newKey;
+  delete params.makeCopy;
   var stringifiedParams = queryString.stringify(params);
   location.search = stringifiedParams;
 };
