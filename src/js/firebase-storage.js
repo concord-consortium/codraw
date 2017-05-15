@@ -36,8 +36,7 @@ FirebaseImp.prototype.rewriteParams = function() {
 };
 
 FirebaseImp.prototype.reqAuth = function() {
-  var provider = new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithRedirect  (provider)
+  firebase.auth().signInAnonymously()
   .then(this.finishAuth.bind(this))
   .catch(this.failAuth.bind(this));
 };
