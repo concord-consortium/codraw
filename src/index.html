@@ -21,12 +21,7 @@
     <script
       src="https://www.gstatic.com/firebasejs/3.6.9/firebase.js">
     </script>
-  	<link rel="stylesheet" type="text/css" href="./drawing-tool.css">
-    <style type="text/css">
-      body {
-        font-family: Arial;
-      } 
-    </style>
+  	<link rel="stylesheet" type="text/css" href="./drawing-tool.css"/>
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
   </head>
   <body>
@@ -46,6 +41,23 @@
       parseSVG: true
     });
     drawingTool.addStore(new window.FirebaseStorage());
+
+    var resizeTimeout;
+
+    function resizeCanvas() {
+      drawingTool.setDimensions(window.innerWidth - 55, Math.max(window.innerHeight - 10,600));
+    };
+
+    function resizeThrottler() {
+      // ignore resize events as long as an resizeCanvas execution is in the queue
+      if ( !resizeTimeout ) {
+        resizeTimeout = setTimeout(function() {
+          resizeTimeout = null;
+          resizeCanvas();
+        }, 300);
+      }
+    }
+    window.addEventListener("resize", resizeThrottler, false);
   </script>
   </body>
 </html>
