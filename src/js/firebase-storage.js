@@ -2,6 +2,7 @@
 var queryString = require('query-string');
 var _ = require('lodash');
 var uuid = require('uuid');
+var diff = require('deep-diff').default.diff;
 
 function FirebaseImp() {
   this.user = null;
@@ -30,7 +31,7 @@ FirebaseImp.prototype.error = function(error) {
 
 FirebaseImp.prototype.rewriteParams = function() {
   var params = queryString.parse(location.search);
-  params.firebaseKey = this.newRefName
+  params.firebaseKey = this.newRefName;
   delete params.newKey;
   delete params.makeCopy;
   var stringifiedParams = queryString.stringify(params);
@@ -56,45 +57,62 @@ FirebaseImp.prototype.finishAuth = function(result) {
   this.log('logged in');
 };
 
+FirebaseImp.prototype.fingerPrint = function(d) {
+  // Simplify data for diffing purposes. For now removing undefined
+  // or null values that firebase doesn't handle well.
+  var copy = _.cloneDeep(d);
+  copy.canvas.objects = _.map(copy.canvas.objects, function(obj) {
+    return _.omitBy(obj, function(value) {
+      return value === null || value === undefined;
+    });
+  });
+  return copy;
+};
+
 FirebaseImp.prototype.registerListeners = function() {
   this.log('registering listeners');
   var ref = this.dataRef;
   var setData = this.loadCallback;
   var log = this.log.bind(this);
   ref.on('value', function(data){
-    var d = data.val().rawData;
-    // TODO: The diffs on changes are very weird.
-    // See results using https://github.com/flitbit/diff
-    if(d && !(_.isEqual(d,this.lastData))) {
-      setData(d || {});
-      this.lastData = d;
-    }
-    if(this.newRefName && d) {
+    var d = data.val() ? data.val().rawData || {} : {};
+    var fingerPrint = this.fingerPrint(d);
+
+    if(this.newRefName) {
       this.swapRefs();
       this.update(d);
+    }
+
+    if(_.isEmpty(d)) { return; }
+    log('new data from firebase');
+
+    var differences = diff(fingerPrint, this.lastData);
+    if(differences) {
+      this.lastData = fingerPrint;
+      setData(d);
     }
   }.bind(this));
 
   // The following methods are here to document other or
   // better ways of syncing records with firebases API:
-  ref.on('child_changed', function(data){ log('child_changed:' + data);});
-  ref.on('child_added', function(data)  { log('child added: ' + data); });
-  ref.on('child_removed', function(data){ log('child removed: ' + data);});
+  // ref.on('child_changed', function(data){ log('child_changed:' + data);});
+  // ref.on('child_added', function(data)  { log('child added: ' + data); });
+  // ref.on('child_removed', function(data){ log('child removed: ' + data);});
 };
 
 var update = function(data) {
   var rawData = data;
-  if (typeof data == "string") {
+  if (typeof data == 'string') {
     rawData = JSON.parse(data);
   }
   if(this.dataRef && this.dataRef.update){
-    this.lastData = rawData;
-    this.dataRef.update({'rawData': rawData});
+    this.lastData = this.fingerPrint(rawData);
+    this.dataRef.update({'rawData': this.lastData});
   }
 };
 
 // TODO: We shouldn't have to debounce, but in some instances … ?
-// FirebaseImp.prototype.update = _.debounce(update,1000,{trailing:true, leading: false});
+// FirebaseImp.prototype.update = _.debounce(update, 300, {trailing:false, leading: true});
 FirebaseImp.prototype.update = update;
 
 FirebaseImp.prototype.swapRefs = function() {
