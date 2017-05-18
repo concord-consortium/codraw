@@ -63,7 +63,9 @@ FirebaseImp.prototype.fingerPrint = function(d) {
   var copy = _.cloneDeep(d);
   copy.canvas.objects = _.map(copy.canvas.objects, function(obj) {
     return _.omitBy(obj, function(value) {
-      return value === null || value === undefined;
+      if (value === null) { return true; }
+      if (value === undefined) { return true; }
+      if (_.isArray(value) && value.length < 1) { return true;}
     });
   });
   return copy;
@@ -72,9 +74,11 @@ FirebaseImp.prototype.fingerPrint = function(d) {
 FirebaseImp.prototype.registerListeners = function() {
   this.log('registering listeners');
   var ref = this.dataRef;
-  var setData = this.loadCallback;
-  var log = this.log.bind(this);
-  ref.on('value', function(data){
+
+  // debounce this to avoid rapid updates from firebase
+  var setData = _.debounce(function(data){
+    // ignore this is if we are writing
+    if(this.currentData || this.pendingData) { return; }
     var d = data.val() ? data.val().rawData || {} : {};
     var fingerPrint = this.fingerPrint(d);
 
@@ -84,14 +88,13 @@ FirebaseImp.prototype.registerListeners = function() {
     }
 
     if(_.isEmpty(d)) { return; }
-    log('new data from firebase');
-
     var differences = diff(fingerPrint, this.lastData);
     if(differences) {
       this.lastData = fingerPrint;
-      setData(d);
+      this.loadCallback(d);
     }
-  }.bind(this));
+  }.bind(this), 200);
+  ref.on('value', setData);
 
   // The following methods are here to document other or
   // better ways of syncing records with firebases API:
@@ -100,20 +103,30 @@ FirebaseImp.prototype.registerListeners = function() {
   // ref.on('child_removed', function(data){ log('child removed: ' + data);});
 };
 
-var update = function(data) {
-  var rawData = data;
-  if (typeof data == 'string') {
-    rawData = JSON.parse(data);
-  }
-  if(this.dataRef && this.dataRef.update){
-    this.lastData = this.fingerPrint(rawData);
-    this.dataRef.update({'rawData': this.lastData});
+FirebaseImp.prototype.endWrite = function() {
+  this.lastData = this.currentData;
+  this.currentData = null;
+  if(this.pendingData) {
+    this.update(this.pendingData);
   }
 };
 
-// TODO: We shouldn't have to debounce, but in some instances … ?
-// FirebaseImp.prototype.update = _.debounce(update, 300, {trailing:false, leading: true});
-FirebaseImp.prototype.update = update;
+FirebaseImp.prototype.update = function(data) {
+  if (typeof data == 'string') { data = JSON.parse(data); }
+  if(this.currentData) {
+    this.pendingData = data;
+    return;
+  }
+  this.pendingData = null;
+  if(this.dataRef && this.dataRef.update){
+    data = this.fingerPrint(data);
+    var differences = diff(data, this.lastData);
+    if(differences) {
+      this.currentData = data;
+      this.dataRef.update({'rawData': this.currentData}, this.endWrite.bind(this));
+    }
+  }
+};
 
 FirebaseImp.prototype.swapRefs = function() {
   this.log('registering listeners');
