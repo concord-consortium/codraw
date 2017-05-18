@@ -46,6 +46,7 @@
 
     function resizeCanvas() {
       drawingTool.setDimensions(window.innerWidth - 55, Math.max(window.innerHeight - 10,600));
+      drawingTool.canvas.renderAll();
     };
 
     function resizeThrottler() {
