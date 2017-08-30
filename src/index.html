@@ -32,6 +32,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.11/fabric.js"></script>
   <script src="./drawing-tool.js"></script>
   <script src="./firebase-storage.js"></script>
+  <script src="./demo.js"></script>
   <script>
     var drawingTool = new DrawingTool("#drawing-tool", {
       firebaseKey: 'codraw',
@@ -40,7 +41,8 @@
       },
       parseSVG: true
     });
-    drawingTool.addStore(new window.FirebaseStorage());
+    var firebaseImp = new window.FirebaseStorage();
+    drawingTool.addStore(firebaseImp);
 
     var resizeTimeout;
 
@@ -58,6 +60,8 @@
         }, 300);
       }
     }
+
+    preparePublish(drawingTool.canvas.getElement(), firebaseImp);
     window.addEventListener("resize", resizeThrottler, false);
   </script>
   </body>

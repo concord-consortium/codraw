@@ -7,17 +7,22 @@
   "author": "Noah Paessel <knowuh@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "awesome-typescript-loader": "^3.2.3",
     "babel-core": "^6.24.1",
     "babel-loader": "^7.0.0",
     "bower": "^1.8.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.28.1",
+    "source-map-loader": "^0.2.1",
     "style-loader": "^0.17.0",
+    "typescript": "^2.4.2",
     "webpack": "^2.5.1",
     "webpack-dev-server": "^2.4.5"
   },
   "dependencies": {
+    "cc-sharing": "^1.0.0",
     "deep-diff": "^0.3.8",
+    "iframe-phone": "^1.2.0",
     "lodash": "^4.17.4",
     "query-string": "^4.3.4",
     "uuid": "^3.0.1"

@@ -164,6 +164,11 @@ FirebaseImp.prototype.save = function(data) {
   this.update(data);
 };
 
+FirebaseImp.prototype.saveFile = function(name, data) {
+  var ref = firebase.storage().ref(name);
+  return ref.put(data);
+};
+
 FirebaseImp.prototype.setLoadFunction = function(_loadCallback) {
   this.loadCallback = _loadCallback;
 };

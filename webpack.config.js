@@ -3,41 +3,42 @@
 // TODO: Maybe later support deployment environments.
 // Look at `webpack.EnvironmentPlugin`
 
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const path = require('path');
-const webpack = require('webpack');
+const CopyWebpackPlugin = require("copy-webpack-plugin");
+const path = require("path");
+const webpack = require("webpack");
 
 module.exports = {
   entry: {
-    'firebase-storage': ['./src/js/firebase-storage.js']
+    "firebase-storage": ["./src/js/firebase-storage.js"],
+    "demo": ["./src/demo.ts"]
   },
 
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js'
+    path: path.resolve(__dirname, "dist"),
+    filename: "[name].js"
   },
 
-  devtool: 'source-map',
+  devtool: "source-map",
 
   resolve: {
-    extensions: ['.webpack.js',  '.js', '.jsx']
+    // Add ".ts" and ".tsx" as resolvable extensions.
+    extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
   },
 
   module: {
-    loaders: [
-      {
-        test: /\.jsx?$/,
-        loader: 'babel-loader',
-        exclude: /node_modules/
-      },
-      { test: /\.styl$/i, loaders: ['style-loader', 'css-loader', 'stylus-loader']},
+    rules: [
+      // All output ".js" files will have any sourcemaps re-processed by "source-map-loader".
+      { enforce: "pre", test: /\.js$/, loader: "source-map-loader" },
+
+      // All files with a ".ts" or ".tsx" extension will be handled by "awesome-typescript-loader".
+      { test: /\.tsx?$/, loader: "awesome-typescript-loader" }
     ]
   },
 
   plugins:[
     new CopyWebpackPlugin([
-      { from: 'src/*', flatten: true},
-      { from: 'vendor/'}
+      { from: "src/*", flatten: true},
+      { from: "vendor/"}
     ])
   ],
   stats: {
