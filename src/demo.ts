@@ -12,10 +12,10 @@ const preparePublish = function(canvas:HTMLCanvasElement, firebase:any) {
       launchUrl: window.location.href,
       name: "Collaborative drawing"
     },
-    getDataFunc: (context:any) => {
+    getDataFunc: (context) => {
       const version  = uuid.v1();
-      const filename:string = `thumbnails/${context.offeringId.id}/${context.groupId.id}/${context.userId.id}/${context.localId}/${version}.jpg`;
-      return new Promise( (resolve:any, reject:any) => {
+      const filename:string = `thumbnails/${context.offering.id}/${context.group.id}/${context.user.id}/${context.localId}/${version}.jpg`;
+      return new Promise( (resolve, reject) => {
         const blobSaver = (blob:Blob) => {
           if(blob) {
             firebase.saveFile(filename, blob).then((results:any) => {
