@@ -20,7 +20,7 @@
     "webpack-dev-server": "^2.4.5"
   },
   "dependencies": {
-    "cc-sharing": "^1.0.1",
+    "cc-sharing": "^1.0.2",
     "deep-diff": "^0.3.8",
     "iframe-phone": "^1.2.0",
     "lodash": "^4.17.4",

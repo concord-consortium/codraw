@@ -1,12 +1,10 @@
 
-import { SharingClient, SharableApp, IFramePhone, Jpeg, Binary} from "cc-sharing";
+import { SharingClient, SharableApp, Jpeg, Binary} from "cc-sharing";
 declare const require:(name:string) => any;
 const iFramePhone = require("iframe-phone");
 const uuid = require("uuid");
 
 const preparePublish = function(canvas:HTMLCanvasElement, firebase:any) {
-  const phone:IFramePhone = iFramePhone.getIFrameEndpoint();
-  phone.initialize();
   const app:SharableApp = {
     application: {
       launchUrl: window.location.href,
@@ -34,7 +32,7 @@ const preparePublish = function(canvas:HTMLCanvasElement, firebase:any) {
 
     }
   }
-  const sharePhone = new SharingClient(phone, app);
+  const sharePhone = new SharingClient(null, app);
 };
 
 (<any>window).preparePublish = preparePublish;

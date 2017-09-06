@@ -556,10 +556,11 @@ caseless@~0.12.0:
   resolved "https://registry.yarnpkg.com/caseless/-/caseless-0.12.0.tgz#1b681c21ff84033c826543090689420d187151dc"
 
 cc-sharing@^1.0.2:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/cc-sharing/-/cc-sharing-1.0.1.tgz#c93b2760b39a2d91115cbfeacdb6a26ab93b696d"
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/cc-sharing/-/cc-sharing-1.0.2.tgz#d083e089777752b754cb724ccda7c1723d2f9bc5"
   dependencies:
     iframe-phone "^1.2.0"
+    lodash "^4.17.4"
     semver "^5.3.0"
     uuid "^3.0.1"
 
