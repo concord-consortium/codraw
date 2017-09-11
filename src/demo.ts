@@ -32,7 +32,7 @@ const preparePublish = function(canvas:HTMLCanvasElement, firebase:any) {
 
     }
   }
-  const sharePhone = new SharingClient(null, app);
+  const sharePhone = new SharingClient({app});
 };
 
 (<any>window).preparePublish = preparePublish;
