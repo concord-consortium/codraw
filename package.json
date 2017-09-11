@@ -1,6 +1,6 @@
 {
   "name": "codraw",
-  "version": "1.0.0",
+  "version": "1.0.03",
   "description": "Collaborative Drawing Tool for use in MSU Digital Inscriptions Project",
   "main": "index.js",
   "repository": "git@github.com:concord-consortium/codraw.git",
