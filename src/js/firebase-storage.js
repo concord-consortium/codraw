@@ -10,6 +10,12 @@ function FirebaseImp() {
   var params = queryString.parse(location.search);
   this.refName = params.firebaseKey || 'default';
   this.newRefName = params.makeCopy ? uuid.v1() : params.newKey || null;
+
+  var hashParams = queryString.parse(location.hash.substring(1));
+  if (hashParams.sharing_clone && (hashParams.sharing_clone !== this.refName)) {
+    this.newRefName = hashParams.sharing_clone;
+  }
+
   this.lastData = {};
   this.config = {
     apiKey: 'AIzaSyDUm2l464Cw7IVtBef4o55key6sp5JYgDk',
@@ -36,6 +42,7 @@ FirebaseImp.prototype.rewriteParams = function() {
   delete params.makeCopy;
   var stringifiedParams = queryString.stringify(params);
   location.search = stringifiedParams;
+  location.hash = "#";
 };
 
 FirebaseImp.prototype.reqAuth = function() {
@@ -61,13 +68,20 @@ FirebaseImp.prototype.fingerPrint = function(d) {
   // Simplify data for diffing purposes. For now removing undefined
   // or null values that firebase doesn't handle well.
   var copy = _.cloneDeep(d);
-  copy.canvas.objects = _.map(copy.canvas.objects, function(obj) {
-    return _.omitBy(obj, function(value) {
-      if (value === null) { return true; }
-      if (value === undefined) { return true; }
-      if (_.isArray(value) && value.length < 1) { return true;}
-    });
-  });
+  if (copy.canvas) {
+    if (copy.canvas.objects) {
+      copy.canvas.objects = _.map(copy.canvas.objects, function(obj) {
+        return _.omitBy(obj, function(value) {
+          if (value === null) { return true; }
+          if (value === undefined) { return true; }
+          if (_.isArray(value) && value.length < 1) { return true;}
+        });
+      });
+    }
+    else {
+      copy.canvas.objects = []
+    }
+  }
   return copy;
 };
 

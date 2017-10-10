@@ -12,7 +12,7 @@ const preparePublish = function(canvas:HTMLCanvasElement, firebase:any) {
     },
     getDataFunc: (context) => {
       const version  = uuid.v1();
-      const filename:string = `thumbnails/${context.offering.id}/${context.group.id}/${context.user.id}/${context.localId}/${version}.jpg`;
+      const filename:string = `thumbnails/${context.offering}/${context.group}/${context.user}/${context.id}/${version}.jpg`;
       return new Promise( (resolve, reject) => {
         const blobSaver = (blob:Blob) => {
           if(blob) {
