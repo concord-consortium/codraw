@@ -10,6 +10,12 @@ function FirebaseImp() {
   var params = queryString.parse(location.search);
   this.refName = params.firebaseKey || 'default';
   this.newRefName = params.makeCopy ? uuid.v1() : params.newKey || null;
+
+  var hashParams = queryString.parse(location.hash.substring(1));
+  if (hashParams.sharing_clone && (hashParams.sharing_clone !== this.refName)) {
+    this.newRefName = hashParams.sharing_clone;
+  }
+
   this.lastData = {};
   this.config = {
     apiKey: 'AIzaSyDUm2l464Cw7IVtBef4o55key6sp5JYgDk',
@@ -36,6 +42,7 @@ FirebaseImp.prototype.rewriteParams = function() {
   delete params.makeCopy;
   var stringifiedParams = queryString.stringify(params);
   location.search = stringifiedParams;
+  location.hash = "#";
 };
 
 FirebaseImp.prototype.reqAuth = function() {
