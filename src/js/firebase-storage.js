@@ -85,6 +85,18 @@ FirebaseImp.prototype.fingerPrint = function(d) {
   return copy;
 };
 
+FirebaseImp.prototype.createSharedUrl = function () {
+  var sharedFirebaseKey = uuid.v1();
+  var sharedRef = firebase.database().ref(sharedFirebaseKey);
+  this.dataRef.once("value", function (snapshot) {
+    sharedRef.set(snapshot.val());
+  });
+  var a = document.createElement("a");
+  a.href = window.location.href;
+  a.search = queryString.stringify({firebaseKey: sharedFirebaseKey});
+  return a.toString()
+};
+
 FirebaseImp.prototype.registerListeners = function() {
   this.log('registering listeners');
   var ref = this.dataRef;

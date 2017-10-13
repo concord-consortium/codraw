@@ -32,7 +32,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.11/fabric.js"></script>
   <script src="./drawing-tool.js"></script>
   <script src="./firebase-storage.js"></script>
-  <script src="./demo.js"></script>
+  <script src="./sharing.js"></script>
   <script>
     var drawingTool = new DrawingTool("#drawing-tool", {
       firebaseKey: 'codraw',
@@ -43,6 +43,7 @@
     });
     var firebaseImp = new window.FirebaseStorage();
     drawingTool.addStore(firebaseImp);
+    addSharingStore(firebaseImp);
 
     var resizeTimeout;
 
