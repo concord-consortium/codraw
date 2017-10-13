@@ -10,7 +10,7 @@ const webpack = require("webpack");
 module.exports = {
   entry: {
     "firebase-storage": ["./src/js/firebase-storage.js"],
-    "demo": ["./src/demo.ts"]
+    "sharing": ["./src/sharing.ts"]
   },
 
   output: {
