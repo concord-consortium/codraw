@@ -59,9 +59,13 @@ FirebaseImp.prototype.failAuth = function(error) {
 
 FirebaseImp.prototype.finishAuth = function(result) {
   this.user = result.user;
-  this.dataRef = firebase.database().ref(this.refName);
+  this.setDataRef(this.refName, "finishAuth");
   this.registerListeners();
-  this.log('logged in');
+  //this.log('logged in');
+};
+FirebaseImp.prototype.setDataRef = function(refName, via) {
+  this.dataRef = firebase.database().ref(refName);
+  console.log("Codraw dataRef via", via, this.dataRef.toString());
 };
 
 FirebaseImp.prototype.fingerPrint = function(d) {
@@ -98,7 +102,7 @@ FirebaseImp.prototype.createSharedUrl = function () {
 };
 
 FirebaseImp.prototype.registerListeners = function() {
-  this.log('registering listeners');
+  //this.log('registering listeners');
   var ref = this.dataRef;
 
   // debounce this to avoid rapid updates from firebase
@@ -155,16 +159,16 @@ FirebaseImp.prototype.update = function(data) {
 };
 
 FirebaseImp.prototype.swapRefs = function() {
-  this.log('registering listeners');
+  //this.log('registering listeners');
   if(this.dataRef) {
     try {
       this.dataRef.off();
     }
     catch(e) {
-      this.log('couldn\'t disable previous data handler');
+      //this.log('couldn\'t disable previous data handler');
     }
   }
-  this.dataRef = firebase.database().ref(this.newRefName);
+  this.setDataRef(this.newRefName, "swapRefs");
   this.registerListeners();
   this.rewriteParams();
 };
@@ -177,7 +181,7 @@ FirebaseImp.prototype.initFirebase = function() {
   var log        = this.log.bind(this);
   firebase.auth().onAuthStateChanged(function(user) {
     if (user) {
-      log(user.displayName + ' authenticated');
+      //log(user.displayName + ' authenticated');
       finishAuth({result: {user: user}});
     } else {
       reqAuth();
