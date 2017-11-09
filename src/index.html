@@ -41,17 +41,21 @@
       },
       parseSVG: true
     });
-    var firebaseImp = new window.FirebaseStorage();
-    drawingTool.addStore(firebaseImp);
-    addSharingStore(firebaseImp);
 
-    var resizeTimeout;
+    function inIframe() {
+      try {
+        return window.self !== window.top
+      } catch (e) {
+        return true
+      }
+    }
 
     function resizeCanvas() {
       drawingTool.setDimensions(window.innerWidth - 55, Math.max(window.innerHeight - 10,600));
       drawingTool.canvas.renderAll();
     };
 
+    var resizeTimeout;
     function resizeThrottler() {
       // ignore resize events as long as an resizeCanvas execution is in the queue
       if ( !resizeTimeout ) {
@@ -61,9 +65,20 @@
         }, 300);
       }
     }
-
-    preparePublish(drawingTool.canvas.getElement(), firebaseImp);
     window.addEventListener("resize", resizeThrottler, false);
+
+    var firebaseImp = new window.FirebaseStorage();
+
+    if (inIframe() && !firebaseImp.isClone) {
+      setupSharing(drawingTool.canvas.getElement(), firebaseImp, function (context) {
+        firebaseImp.init(context)
+        drawingTool.addStore(firebaseImp);
+      });
+    }
+    else {
+      firebaseImp.init()
+      drawingTool.addStore(firebaseImp);
+    }
   </script>
   </body>
 </html>

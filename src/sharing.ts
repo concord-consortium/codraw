@@ -1,21 +1,16 @@
 
-import { SharingClient, SharableApp, Jpeg, Binary} from "cc-sharing";
+import { SharingClient, SharableApp, Jpeg, Binary, Context} from "cc-sharing";
 declare const require:(name:string) => any;
 const iFramePhone = require("iframe-phone");
 const uuid = require("uuid");
 
-let firebaseImp:any = null;
-const addSharingStore = function (_firebaseImp:any) {
-  firebaseImp = _firebaseImp;
-}
-
-const preparePublish = function(canvas:HTMLCanvasElement, firebase:any) {
+const setupSharing = function(canvas:HTMLCanvasElement, firebase:any, done:Function) {
   let publishing = false
   const app:SharableApp = {
     application: () => {
       let launchUrl = window.location.href
-      if (publishing && firebaseImp) {
-        launchUrl = firebaseImp.createSharedUrl()
+      if (publishing) {
+        launchUrl = firebase.createSharedUrl()
         publishing = false
       }
       return {
@@ -43,11 +38,13 @@ const preparePublish = function(canvas:HTMLCanvasElement, firebase:any) {
         }
         canvas.toBlob(blobSaver, Jpeg.type);
       });
-
+    },
+    initCallback: (context:Context) => {
+      done(context)
     }
   }
   const sharePhone = new SharingClient({app});
 };
 
-(<any>window).preparePublish = preparePublish;
-(<any>window).addSharingStore = addSharingStore;
+(<any>window).setupSharing = setupSharing;
+
