@@ -136,8 +136,14 @@ FirebaseImp.prototype.registerListeners = function() {
       this.dataRef.once("value", function (newData) {
         // Since newRefName is also used to change over to the possibility already existing shared data
         // only copy over original data ref contents to new data ref contents if new data ref is empty
-        if (!newData.val()) {
+        const newD = newData.val();
+        if (!newD) {
+          // save original data to new ref
           this.update(d);
+        }
+        else {
+          this.lastData = this.fingerPrint(newD);
+          this.loadCallback(newD);
         }
       }.bind(this));
       this.newRefName = null;
