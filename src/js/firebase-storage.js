@@ -30,7 +30,7 @@ function FirebaseImp() {
 
 FirebaseImp.prototype.init = function(context) {
 
-  if (context) {
+  if (context && (context.class !== "default")) {
     this.newRefName = ["classes/", context.class, "/groups/", context.group, "/offerings/", context.offering, "/item/", context.id].join("")
   }
 
@@ -139,7 +139,7 @@ FirebaseImp.prototype.registerListeners = function() {
         if (!newData.val()) {
           this.update(d);
         }
-      });
+      }.bind(this));
       this.newRefName = null;
     }
 
