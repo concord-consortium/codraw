@@ -12,6 +12,7 @@ function FirebaseImp() {
   this.newRefName = params.makeCopy ? uuid.v1() : params.newKey || null;
 
   var hashParams = queryString.parse(location.hash.substring(1));
+  this.ignoreIframe = hashParams.ignoreIframe === "true";
   this.isClone = hashParams.sharing_clone && (hashParams.sharing_clone !== this.refName);
   if (this.isClone) {
     this.newRefName = hashParams.sharing_clone;
@@ -117,7 +118,7 @@ FirebaseImp.prototype.createSharedUrl = function () {
   var a = document.createElement("a");
   a.href = window.location.href;
   a.hash = queryString.stringify({firebaseKey: sharedFirebaseKey});
-  return a.toString()
+  return a.toString();
 };
 
 FirebaseImp.prototype.registerListeners = function() {
