@@ -69,7 +69,7 @@
 
     var firebaseImp = new window.FirebaseStorage();
 
-    if (inIframe() && !firebaseImp.isClone) {
+    if (inIframe() && !firebaseImp.ignoreIframe && !firebaseImp.isClone) {
       setupSharing(drawingTool.canvas.getElement(), firebaseImp, function (context) {
         firebaseImp.init(context)
         drawingTool.addStore(firebaseImp);
