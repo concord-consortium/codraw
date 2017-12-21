@@ -1088,6 +1088,8 @@ DrawingTool.prototype.save = function () {
  *  - noHistoryUpdate: if true, this action won't be saved in undo / redo history
  */
 DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) {
+  var activeTextObject = this.currentTool.name == "Text Tool" ? this.canvas.getActiveObject() : null;
+
   // When JSON string is not provided (or empty) just clear the canvas.
   if (!jsonOrObject) {
     this.canvas.clear();
@@ -1103,7 +1105,7 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
   else {
     state = jsonOrObject;
   }
-  
+
   state = convertState(state);
 
   // Process Drawing Tool specific options.
@@ -1132,9 +1134,28 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
   $.when(loadDef, bgImgDef).done(loadFinished.bind(this));
 
   function loadFinished() {
-    // We don't serialize selectable property which depends on currently selected tool.
-    // Currently objects should be selectable only if select tool is active.
-    this.tools.select.setSelectable(this.tools.select.active);
+    if (activeTextObject) {
+      var text = new fabric.IText(activeTextObject.text, {
+        left: activeTextObject.left,
+        top: activeTextObject.top,
+        lockUniScaling: true,
+        fontFamily: activeTextObject.fontFamily,
+        fontSize: activeTextObject.fontSize,
+        fill: activeTextObject.stroke
+      });
+      this.tools.text.actionComplete.call(this.tools.text, text);
+      this.canvas.add(text);
+      this.tools.text.editText.call(this.tools.text, text, {});
+
+      // TODO: figure out how to stop the save/load endless loop this creates
+      // I've tried running this in a timeout and setting a prototype variable
+      // that skipped the pushToHistory() call but that did not work
+    }
+    else {
+      // We don't serialize selectable property which depends on currently selected tool.
+      // Currently objects should be selectable only if select tool is active.
+      this.tools.select.setSelectable(this.tools.select.active);
+    }
     if (!noHistoryUpdate) {
       this.pushToHistory();
     }
