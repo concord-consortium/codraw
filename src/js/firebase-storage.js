@@ -10,6 +10,7 @@ function FirebaseImp() {
   var params = queryString.parse(location.hash);
   this.refName = params.firebaseKey || 'default';
   this.newRefName = params.makeCopy ? uuid.v1() : params.newKey || null;
+  this.streaming = !!params.streaming;
 
   var hashParams = queryString.parse(location.hash.substring(1));
   this.ignoreIframe = hashParams.ignoreIframe === "true";
@@ -27,6 +28,13 @@ function FirebaseImp() {
     messagingSenderId: '432582594397'
   };
   firebase.initializeApp(this.config);
+
+  if (this.streaming) {
+    this.setupStreamingStorage();
+  }
+  else {
+    this.setupStateStorage();
+  }
 }
 
 FirebaseImp.prototype.init = function(context) {
@@ -84,7 +92,7 @@ FirebaseImp.prototype.finishAuth = function(result) {
 };
 
 FirebaseImp.prototype.setDataRef = function(refName, via) {
-  this.dataRef = firebase.database().ref(refName);
+  this.dataRef = firebase.database().ref(refName + (this.streaming ? "/events" : ""));
   console.log("Codraw dataRef via", via, this.dataRef.toString());
 };
 
@@ -122,6 +130,15 @@ FirebaseImp.prototype.createSharedUrl = function () {
 };
 
 FirebaseImp.prototype.registerListeners = function() {
+  if (this.streaming) {
+    this.registerStreamingListeners();
+  }
+  else {
+    this.registerStateListeners();
+  }
+};
+
+FirebaseImp.prototype.registerStateListeners = function() {
   //this.log('registering listeners');
   var ref = this.dataRef;
 
@@ -158,12 +175,40 @@ FirebaseImp.prototype.registerListeners = function() {
     }
   }.bind(this), 200);
   ref.on('value', setData);
+};
 
-  // The following methods are here to document other or
-  // better ways of syncing records with firebases API:
-  // ref.on('child_changed', function(data){ log('child_changed:' + data);});
-  // ref.on('child_added', function(data)  { log('child added: ' + data); });
-  // ref.on('child_removed', function(data){ log('child removed: ' + data);});
+FirebaseImp.prototype.registerStreamingListeners = function() {
+  var startListener = function () {
+    this.dataRef.on('child_added', function(data)  {
+      var val = data.val();
+      this.respondToEventCallback(val.event, val.data);
+    }.bind(this));
+  }.bind(this);
+
+  if (this.newRefName) {
+    // get the current events
+    this.dataRef.once('value', function (data) {
+      var d = data.val() ? data.val() || {} : {};
+
+      // swap to the new ref
+      this.setDataRef(this.newRefName, "registerStreamingListeners");
+      this.rewriteParams();
+      this.newRefName = null;
+
+      // get the new ref data
+      this.dataRef.once("value", function (newData) {
+        if (!newData.val()) {
+          // if no data (a new ref), save the old data to it
+          this.dataRef.set(d);
+        }
+        startListener();
+      }.bind(this));
+
+    }.bind(this));
+  }
+  else {
+    startListener();
+  }
 };
 
 FirebaseImp.prototype.endWrite = function() {
@@ -191,6 +236,13 @@ FirebaseImp.prototype.update = function(data) {
   }
 };
 
+FirebaseImp.prototype.saveEvent = function (event, data) {
+  this.dataRef.push({
+    event: event,
+    data: data.toObject()
+  });
+};
+
 FirebaseImp.prototype.swapRefs = function() {
   //this.log('registering listeners');
   if(this.dataRef) {
@@ -206,19 +258,28 @@ FirebaseImp.prototype.swapRefs = function() {
   this.rewriteParams();
 };
 
-
-// storeImp  {save, setLoadFunction}
-FirebaseImp.prototype.save = function(data) {
-  this.update(data);
-};
-
 FirebaseImp.prototype.saveFile = function(name, data) {
   var ref = firebase.storage().ref(name);
   return ref.put(data);
 };
 
-FirebaseImp.prototype.setLoadFunction = function(_loadCallback) {
-  this.loadCallback = _loadCallback;
+FirebaseImp.prototype.setupStreamingStorage = function () {
+  FirebaseImp.prototype.setRespondToEventFunction = function(_respondToEventCallback) {
+    this.respondToEventCallback = _respondToEventCallback;
+  };
+  FirebaseImp.prototype.saveStreamEvent = function(event, data) {
+    this.saveEvent(event, data);
+  };
+};
+
+FirebaseImp.prototype.setupStateStorage = function () {
+  FirebaseImp.prototype.setLoadFunction = function(_loadCallback) {
+    this.loadCallback = _loadCallback;
+  };
+
+  FirebaseImp.prototype.save = function(data) {
+    this.update(data);
+  };
 };
 
 module.exports = FirebaseImp;
