@@ -1745,7 +1745,9 @@ DrawingTool.prototype._trackTextChangesAndAddUUID = function() {
   this.canvas.on("object:selected", function (event) {
     var obj = event.target;
     if (obj && (obj.type === "i-text") && !self._ignoreObjectSelected) {
-      saveTextChanges(obj, false);
+      setTimeout(function () {
+        saveTextChanges(obj, obj.isEditing);
+      }, 1);
     }
   });
 
