@@ -1147,26 +1147,29 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
             this.save();
           }.bind(this), 1);
         });
+        activeObject = this.canvas.getObjectByUUID(activeObjectUUID);
       }
-      if (activeObject.type === "i-text") {
-        // only reselect text objects if we were the last to update it
-        if (activeObject._clientId === this._clientId) {
-          this._ignoreObjectSelected = true;
-          this.canvas.setActiveObject(activeObject);
-          this._ignoreObjectSelected = false;
-          var textChange = this._textChanges[activeObjectUUID];
-          if (textChange) {
-            activeObject.setText(textChange.text);
-            if (textChange.editing) {
-              activeObject.enterEditing();
+      if (activeObject) {
+        if (activeObject.type === "i-text") {
+          // only reselect text objects if we were the last to update it
+          if (activeObject._clientId === this._clientId) {
+            this._ignoreObjectSelected = true;
+            this.canvas.setActiveObject(activeObject);
+            this._ignoreObjectSelected = false;
+            var textChange = this._textChanges[activeObjectUUID];
+            if (textChange) {
+              activeObject.setText(textChange.text);
+              if (textChange.editing) {
+                activeObject.enterEditing();
+              }
+              activeObject.setSelectionStart(textChange.selectionStart);
+              activeObject.setSelectionEnd(textChange.selectionEnd);
             }
-            activeObject.setSelectionStart(textChange.selectionStart);
-            activeObject.setSelectionEnd(textChange.selectionEnd);
           }
         }
-      }
-      else {
-        this.canvas.setActiveObject(activeObject);
+        else {
+          this.canvas.setActiveObject(activeObject);
+        }
       }
     }
     // We don't serialize selectable property which depends on currently selected tool.
