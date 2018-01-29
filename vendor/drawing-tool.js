@@ -1142,12 +1142,13 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
       if (!activeObject && activeObjectJSON) {
         // this happens when a object is created but another user saves their state before they get the object in a load
         // so we need to add the object back to the canvas and force a save
-        this.canvas.util.enlivenObjects([JSON.parse(activeObjectJSON)], function () {
+        this.canvas.util.enlivenObjects([JSON.parse(activeObjectJSON)]);
+        activeObject = this.canvas.getObjectByUUID(activeObjectUUID);
+        if (activeObject) {
           this.setTimeout(function () {
             this.save();
           }.bind(this), 1);
-        });
-        activeObject = this.canvas.getObjectByUUID(activeObjectUUID);
+        }
       }
       if (activeObject) {
         if (activeObject.type === "i-text") {
