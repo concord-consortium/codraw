@@ -1139,17 +1139,19 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
     if (activeObjectUUID) {
       var activeObject = this.canvas.getObjectByUUID(activeObjectUUID);
       if (activeObject) {
-        var textChange = this._textChanges[activeObjectUUID];
-        if (textChange) {
-          // only reactivate the text object if the local client made the change
-          // this disables two users from editing the same text object at the same
-          // time when using the Firebase store.
+        if (activeObject.type === "i-text") {
+          // only reselect text objects if we were the last to update it
           if (activeObject._clientId === this._clientId) {
             this.canvas.setActiveObject(activeObject);
-            activeObject.setText(textChange.text)
+            var textChange = this._textChanges[activeObjectUUID];
+            if (textChange) {
+              activeObject.setText(textChange.text);
+            }
             activeObject.enterEditing();
-            activeObject.setSelectionStart(textChange.selectionStart);
-            activeObject.setSelectionEnd(textChange.selectionEnd);
+            if (textChange) {
+              activeObject.setSelectionStart(textChange.selectionStart);
+              activeObject.setSelectionEnd(textChange.selectionEnd);
+            }
           }
         }
         else {
@@ -1712,15 +1714,27 @@ DrawingTool.prototype._trackTextChangesAndAddUUID = function() {
 
   this._clientId = this._uuidGen();
 
-  this.canvas.on("text:changed", function (event) {
-    var target = event.target;
-    self._textChanges[target._uuid] = {
-      selectionEnd: target.selectionEnd,
-      selectionStart: target.selectionStart,
-      text: target.text
+  var saveTextChanges = function (obj) {
+    obj._uuid = obj._uuid || self._uuidGen();
+    obj._clientId = self._clientId;
+    self._textChanges[obj._uuid] = {
+      selectionEnd: obj.selectionEnd,
+      selectionStart: obj.selectionStart,
+      text: obj.text
     };
-    target._clientId = self._clientId;
     self.save();
+  };
+
+  this.canvas.on("object:added", function (event) {
+    var obj = event.target;
+    // save mousedown of text so we can reselect it if another user saves before we start typing
+    if (obj && (obj.type === "i-text") && (obj.text.length === 0) && !obj._clientId) {
+      saveTextChanges(obj);
+    }
+  });
+
+  this.canvas.on("text:changed", function (event) {
+    saveTextChanges(event.target);
   });
 
   fabric.Object.prototype.setOptions = (function(setOptions) {
