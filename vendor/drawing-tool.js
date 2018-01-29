@@ -1109,6 +1109,7 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
 
   var activeObject = this.canvas.getActiveObject();
   var activeObjectUUID = activeObject ? activeObject._uuid : undefined;
+  var activeObjectJSON = activeObject ? activeObject.toObject() : undefined;
 
   // Process Drawing Tool specific options.
   var dtState = state.dt;
@@ -1138,27 +1139,34 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
   function loadFinished() {
     if (activeObjectUUID) {
       var activeObject = this.canvas.getObjectByUUID(activeObjectUUID);
-      if (activeObject) {
-        if (activeObject.type === "i-text") {
-          // only reselect text objects if we were the last to update it
-          if (activeObject._clientId === this._clientId) {
-            this._ignoreObjectSelected = true;
-            this.canvas.setActiveObject(activeObject);
-            this._ignoreObjectSelected = false;
-            var textChange = this._textChanges[activeObjectUUID];
-            if (textChange) {
-              activeObject.setText(textChange.text);
-              if (textChange.editing) {
-                activeObject.enterEditing();
-              }
-              activeObject.setSelectionStart(textChange.selectionStart);
-              activeObject.setSelectionEnd(textChange.selectionEnd);
+      if (!activeObject && activeObjectJSON) {
+        // this happens when a object is created but another user saves their state before they get the object in a load
+        // so we need to add the object back to the canvas and force a save
+        this.canvas.util.enlivenObjects([JSON.parse(activeObjectJSON)], function () {
+          this.setTimeout(function () {
+            this.save();
+          }.bind(this), 1);
+        });
+      }
+      if (activeObject.type === "i-text") {
+        // only reselect text objects if we were the last to update it
+        if (activeObject._clientId === this._clientId) {
+          this._ignoreObjectSelected = true;
+          this.canvas.setActiveObject(activeObject);
+          this._ignoreObjectSelected = false;
+          var textChange = this._textChanges[activeObjectUUID];
+          if (textChange) {
+            activeObject.setText(textChange.text);
+            if (textChange.editing) {
+              activeObject.enterEditing();
             }
+            activeObject.setSelectionStart(textChange.selectionStart);
+            activeObject.setSelectionEnd(textChange.selectionEnd);
           }
         }
-        else {
-          this.canvas.setActiveObject(activeObject);
-        }
+      }
+      else {
+        this.canvas.setActiveObject(activeObject);
       }
     }
     // We don't serialize selectable property which depends on currently selected tool.
