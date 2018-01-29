@@ -11,41 +11,41 @@
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
-/******/
+
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
-/******/
+
 /******/ 		// Check if module is in cache
 /******/ 		if(installedModules[moduleId])
 /******/ 			return installedModules[moduleId].exports;
-/******/
+
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			i: moduleId,
 /******/ 			l: false,
 /******/ 			exports: {}
 /******/ 		};
-/******/
+
 /******/ 		// Execute the module function
 /******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-/******/
+
 /******/ 		// Flag the module as loaded
 /******/ 		module.l = true;
-/******/
+
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-/******/
-/******/
+
+
 /******/ 	// expose the modules object (__webpack_modules__)
 /******/ 	__webpack_require__.m = modules;
-/******/
+
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
-/******/
+
 /******/ 	// identity function for calling harmony imports with the correct context
 /******/ 	__webpack_require__.i = function(value) { return value; };
-/******/
+
 /******/ 	// define getter function for harmony exports
 /******/ 	__webpack_require__.d = function(exports, name, getter) {
 /******/ 		if(!__webpack_require__.o(exports, name)) {
@@ -56,7 +56,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 			});
 /******/ 		}
 /******/ 	};
-/******/
+
 /******/ 	// getDefaultExport function for compatibility with non-harmony modules
 /******/ 	__webpack_require__.n = function(module) {
 /******/ 		var getter = module && module.__esModule ?
@@ -65,13 +65,13 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 		__webpack_require__.d(getter, 'a', getter);
 /******/ 		return getter;
 /******/ 	};
-/******/
+
 /******/ 	// Object.prototype.hasOwnProperty.call
 /******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-/******/
+
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-/******/
+
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(__webpack_require__.s = 39);
 /******/ })
@@ -950,7 +950,7 @@ var EVENTS = {
 
 // Note that some object properties aren't serialized by default by FabricJS.
 // List them here so they can be serialized.
-var ADDITIONAL_PROPS_TO_SERIALIZE = ['lockUniScaling'];
+var ADDITIONAL_PROPS_TO_SERIALIZE = ['lockUniScaling', '_uuid', '_clientId'];
 
 /**
  * DrawingTool Constructor
@@ -977,6 +977,7 @@ function DrawingTool(selector, options, settings) {
 
   this._initDOM();
   this._initFabricJS();
+  this._trackTextChangesAndAddUUID();
   this._setDimensions(this.options.width, this.options.height);
   this._initStores();
   this._initTools();
@@ -1103,8 +1104,11 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
   else {
     state = jsonOrObject;
   }
-  
+
   state = convertState(state);
+
+  var activeObject = this.canvas.getActiveObject();
+  var activeObjectUUID = activeObject ? activeObject._uuid : undefined;
 
   // Process Drawing Tool specific options.
   var dtState = state.dt;
@@ -1132,6 +1136,27 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
   $.when(loadDef, bgImgDef).done(loadFinished.bind(this));
 
   function loadFinished() {
+    if (activeObjectUUID) {
+      var activeObject = this.canvas.getObjectByUUID(activeObjectUUID);
+      if (activeObject) {
+        var textChange = this._textChanges[activeObjectUUID];
+        if (textChange) {
+          // only reactivate the text object if the local client made the change
+          // this disables two users from editing the same text object at the same
+          // time when using the Firebase store.
+          if (activeObject._clientId === this._clientId) {
+            this.canvas.setActiveObject(activeObject);
+            activeObject.setText(textChange.text)
+            activeObject.enterEditing();
+            activeObject.setSelectionStart(textChange.selectionStart);
+            activeObject.setSelectionEnd(textChange.selectionEnd);
+          }
+        }
+        else {
+          this.canvas.setActiveObject(activeObject);
+        }
+      }
+    }
     // We don't serialize selectable property which depends on currently selected tool.
     // Currently objects should be selectable only if select tool is active.
     this.tools.select.setSelectable(this.tools.select.active);
@@ -1675,6 +1700,55 @@ DrawingTool.prototype.notifySave = function(serializedJson) {
       console.error('store does not implement required `save(serializedJson)` function!');
     }
   }
+};
+
+/*
+  This was added to allow text changes in the Firebase
+*/
+DrawingTool.prototype._trackTextChangesAndAddUUID = function() {
+  var self = this;
+
+  this._textChanges = {};
+
+  this._clientId = this._uuidGen();
+
+  this.canvas.on("text:changed", function (event) {
+    var target = event.target;
+    self._textChanges[target._uuid] = {
+      selectionEnd: target.selectionEnd,
+      selectionStart: target.selectionStart,
+      text: target.text
+    };
+    target._clientId = self._clientId;
+    self.save();
+  });
+
+  fabric.Object.prototype.setOptions = (function(setOptions) {
+    return function(options) {
+      setOptions.apply(this, [options]);
+      this._uuid = this._uuid || self._uuidGen();
+    };
+  })(fabric.Object.prototype.setOptions);
+
+  fabric.Canvas.prototype.getObjectByUUID = function(uuid) {
+    var object = null;
+    var objects = this.getObjects();
+
+    for (var i = 0, len = this.size(); i < len; i++) {
+      if (objects[i]._uuid && objects[i]._uuid === uuid) {
+        object = objects[i];
+        break;
+      }
+    }
+    return object;
+  };
+};
+
+DrawingTool.prototype._uuidGen = function() {
+  return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 };
 
 module.exports = DrawingTool;
@@ -2582,7 +2656,6 @@ module.exports = FreeDrawTool;
 /* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* globals require */
 var fabric    = __webpack_require__(2);
 var inherit   = __webpack_require__(0);
 var ShapeTool = __webpack_require__(4);
@@ -2598,7 +2671,7 @@ function StampTool(name, drawTool, parseSVG) {
   // FabricJS object.
   this._stamp = null;
 
-  this._curr = null;
+  this._curr = null
   this._startX = null;
   this._startY = null;
 }
@@ -4789,4 +4862,3 @@ module.exports = DrawingTool;
 /***/ })
 /******/ ]);
 });
-//# sourceMappingURL=drawing-tool.js.map
