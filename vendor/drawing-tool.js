@@ -2427,6 +2427,8 @@ function FirebaseManager(undoRedo, drawTool, options) {
   this.drawTool = drawTool;
   this.firebase = options.firebase;
 
+  this.loadFilter = options.loadFilter;
+
   this.stackIndex = -1;
   this.stack = [];
   this.states = {};
@@ -2608,7 +2610,7 @@ FirebaseManager.prototype.moveToNewState = function (newStateKey) {
       activeObject, change, textObject, fullStateStackIndex, stateKeys, singleStateMove, multiStateMove;
 
   singleStateMove = function (newStateKey, newState, callback) {
-    var localTextChange, delta, object;
+    var localTextChange, delta, object, toLoad;
 
     switch (newState.type) {
       case FULL_STATE:
@@ -2634,7 +2636,8 @@ FirebaseManager.prototype.moveToNewState = function (newStateKey) {
         }
 
         this.loadingFromJSON = true;
-        this.drawTool.load(newState.value, function () {
+        toLoad = this.loadFilter ? this.loadFilter(newState.value) : newState.value;
+        this.drawTool.load(toLoad, function () {
           this.drawTool._fireHistoryEvents();
           this.loadingFromJSON = false;
           if (callback) {

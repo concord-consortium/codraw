@@ -102,7 +102,14 @@ FirebaseUndoRedo.prototype.replaceUndoRedo = function() {
   var finish = function (refPath) {
     this.options.drawingTool.replaceUndoRedo(DrawingTool.FirebaseUndoRedo, {
       firebase: firebase,
-      refPath: refPath
+      refPath: refPath,
+      loadFilter: function (state) {
+        // don't sync drawing canvas size
+        if (state) {
+          delete state.dt;
+        }
+        return state;
+      }
     });
   }.bind(this);
 
