@@ -1147,13 +1147,7 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
 
   var activeObject = this.canvas.getActiveObject();
   var activeObjectUUID = activeObject ? activeObject._uuid : undefined;
-  var previousActiveObject;
-  if (activeObject) {
-    try {
-      previousActiveObject = JSON.parse(activeObject.toObject());
-    }
-    catch (e) {}
-  }
+  var previousActiveObject = activeObject ? activeObject.toObject() : undefined;
 
   // Process Drawing Tool specific options.
   var dtState = state.dt;
