@@ -2589,7 +2589,7 @@ FirebaseManager.prototype.computeStateDelta = function (oldState, newState) {
     removed.push(oldObjectMap[key]);
   });
 
-  if (added.length + removed.length + changed.length > 1) {
+  if (added.length + removed.length + changed.length != 1) {
     return noDelta;
   }
   if (added.length == 1) {
@@ -2601,7 +2601,6 @@ FirebaseManager.prototype.computeStateDelta = function (oldState, newState) {
   if (changed.length == 1) {
     return {objectChanged: changed[0]};
   }
-  return noDelta;
 };
 
 FirebaseManager.prototype.moveToNewState = function (newStateKey) {
