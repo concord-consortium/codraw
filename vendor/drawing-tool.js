@@ -2603,12 +2603,13 @@ FirebaseManager.prototype.moveToNewState = function (newStateKey) {
       activeObject, change, textObject, fullStateStackIndex, stateKeys, singleStateMove, multiStateMove;
 
   singleStateMove = function (newStateKey, newState, callback) {
-    var localTextChange, delta, object, toLoad;
+    var localTextChange, delta, object, toLoad, doLoad;
 
     switch (newState.type) {
       case FULL_STATE:
-        // TODO: compare new state and old state values to see if we can just add or modify a single object
-        delta = {}; //this.computeStateDelta(this.currentStateValue, newState.value);
+        // compare new state and old state values to see if we can just add or modify a single object
+        doLoad = true;
+        delta = this.computeStateDelta(this.currentStateValue, newState.value);
 
         if (delta.objectAdded) {
           fabric.util.enlivenObjects([delta.objectAdded], function (objects) {
@@ -2616,27 +2617,32 @@ FirebaseManager.prototype.moveToNewState = function (newStateKey) {
               this.drawTool.canvas.add(object);
             }.bind(this));
           }.bind(this));
+          doLoad = false;
         }
 
         if (delta.objectRemoved) {
           object = this.drawTool.canvas.getObjectByUUID(delta.objectRemoved._uuid);
           if (object) {
             object.remove();
+            doLoad = false;
           }
         }
 
         if (delta.objectChanged) {
+          // TODO: implement changing the object
         }
 
-        this.loadingFromJSON = true;
-        toLoad = this.loadFilter ? this.loadFilter(newState.value) : newState.value;
-        this.drawTool.load(toLoad, function () {
-          this.drawTool._fireHistoryEvents();
-          this.loadingFromJSON = false;
-          if (callback) {
-            callback();
-          }
-        }.bind(this), true);
+        if (doLoad) {
+          this.loadingFromJSON = true;
+          toLoad = this.loadFilter ? this.loadFilter(newState.value) : newState.value;
+          this.drawTool.load(toLoad, function () {
+            this.drawTool._fireHistoryEvents();
+            this.loadingFromJSON = false;
+            if (callback) {
+              callback();
+            }
+          }.bind(this), true);
+        }
         break;
 
       case TEXT_CHANGE:
