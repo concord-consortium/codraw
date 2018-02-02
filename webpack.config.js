@@ -10,6 +10,7 @@ const webpack = require("webpack");
 module.exports = {
   entry: {
     "firebase-storage": ["./src/js/firebase-storage.js"],
+    "firebase-undo-redo": ["./src/js/firebase-undo-redo.js"],
     "sharing": ["./src/sharing.ts"]
   },
 
