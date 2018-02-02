@@ -1182,7 +1182,12 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
       // this happens when a object is created but another user saves their state before they get the object in a load
       // so we need to add the object back to the canvas and force a save
       if (!activeObject && activeObjectJSON && (this._lastLocallyRemovedUUID !== activeObjectUUID)) {
-        this.canvas.util.enlivenObjects([JSON.parse(activeObjectJSON)]);
+        fabric.util.enlivenObjects([JSON.parse(activeObjectJSON)], function (objects) {
+          objects.forEach(function (object) {
+            this.canvas.add(object);
+          }.bind(this));
+        }.bind(this));
+
         activeObject = this.canvas.getObjectByUUID(activeObjectUUID);
         if (activeObject) {
           // wait so we complete the load before saving again
@@ -2637,9 +2642,9 @@ FirebaseManager.prototype.moveToNewState = function (newStateKey) {
           textObject.clientId = change.clientId;
           textObject.setText(change.text);
           if (textObject.isEditing) {
-            localTextChange = this._localTextChanges[textObject._uuid];
-            activeObject.setSelectionStart(localTextChange ? localTextChange.selectionStart : text.length);
-            activeObject.setSelectionEnd(localTextChange ? localTextChange.selectionEnd : text.length);
+            localTextChange = this.drawTool._localTextChanges[textObject._uuid];
+            textObject.setSelectionStart(localTextChange ? localTextChange.selectionStart : text.length);
+            textObject.setSelectionEnd(localTextChange ? localTextChange.selectionEnd : text.length);
           }
         }
         if (callback) {
