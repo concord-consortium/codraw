@@ -1147,11 +1147,19 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
 
   var activeObject = this.canvas.getActiveObject();
   var activeObjectUUID = activeObject ? activeObject._uuid : undefined;
-  var activeObjectJSON = activeObject ? activeObject.toObject() : undefined;
+  var previousActiveObject;
+  if (activeObject) {
+    try {
+      previousActiveObject = JSON.parse(activeObject.toObject());
+    }
+    catch (e) {}
+  }
 
   // Process Drawing Tool specific options.
   var dtState = state.dt;
-  this._setDimensions(dtState.width, dtState.height);
+  if (dtState) {
+    this._setDimensions(dtState.width, dtState.height);
+  }
 
   // Load FabricJS state.
   var loadDef = $.Deferred();
@@ -1159,7 +1167,7 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
   // Note that we remove background definition before we call #loadFromJSON
   // and then add the same background manually. Otherwise, the background
   // won't be loaded due to CORS error (FabricJS bug?).
-  var canvasState = state.canvas;
+  var canvasState = state.canvas || {objects: []};
   var backgroundImage = canvasState.backgroundImage;
   delete canvasState.backgroundImage;
   this.canvas.loadFromJSON(canvasState, loadDef.resolve.bind(loadDef));
@@ -1181,8 +1189,8 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
       // if the pre-load active object wasn't found in the restored json and we just didn't remove it add it back
       // this happens when a object is created but another user saves their state before they get the object in a load
       // so we need to add the object back to the canvas and force a save
-      if (!activeObject && activeObjectJSON && (this._lastLocallyRemovedUUID !== activeObjectUUID)) {
-        fabric.util.enlivenObjects([JSON.parse(activeObjectJSON)], function (objects) {
+      if (!activeObject && previousActiveObject && (this._lastLocallyRemovedUUID !== activeObjectUUID)) {
+        fabric.util.enlivenObjects([previousActiveObject], function (objects) {
           objects.forEach(function (object) {
             this.canvas.add(object);
           }.bind(this));
@@ -1192,7 +1200,7 @@ DrawingTool.prototype.load = function (jsonOrObject, callback, noHistoryUpdate) 
         if (activeObject) {
           // wait so we complete the load before saving again
           this.setTimeout(function () {
-            //this.pushToHistory();
+            this.pushToHistory();
           }.bind(this), 1);
         }
       }
@@ -2605,7 +2613,7 @@ FirebaseManager.prototype.moveToNewState = function (newStateKey) {
     switch (newState.type) {
       case FULL_STATE:
         // TODO: compare new state and old state values to see if we can just add or modify a single object
-        delta = this.computeStateDelta(this.currentStateValue, newState.value);
+        delta = {}; //this.computeStateDelta(this.currentStateValue, newState.value);
 
         if (delta.objectAdded) {
           fabric.util.enlivenObjects([delta.objectAdded], function (objects) {
