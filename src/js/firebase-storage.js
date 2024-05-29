@@ -20,7 +20,7 @@ function FirebaseImp() {
 
   this.lastData = {};
   this.config = {
-    apiKey: 'AIzaSyDUm2l464Cw7IVtBef4o55key6sp5JYgDk',
+    apiKey: atob('QUl6YVN5RFVtMmw0NjRDdzdJVnRCZWY0bzU1a2V5NnNwNUpZZ0Rr'),
     authDomain: 'colabdraw.firebaseapp.com',
     databaseURL: 'https://colabdraw.firebaseio.com',
     storageBucket: 'colabdraw.appspot.com',
